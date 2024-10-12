@@ -5,12 +5,14 @@
 #include <array>
 #include <cstdlib>
 #include <ctime>
+#include <queue>
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 const int TILE_SIZE = 8;
 const int GRID_WIDTH = SCREEN_WIDTH / TILE_SIZE;
 const int GRID_HEIGHT = SCREEN_HEIGHT / TILE_SIZE;
+const int QUEUE_SIZE = 4; // Number of shapes to preview
 
 // Color definitions for the tetrominoes
 const SDL_Color COLORS[] = {
@@ -44,6 +46,7 @@ std::array<int, 4> currentTetromino; // The 4 blocks of the current tetromino
 int currentX = GRID_WIDTH / 2 - 1;
 int currentY = 0;
 
+std::queue<int> nextPiecesQueue;
 // Define a grid representing the game board (0 means empty, non-zero means occupied)
 std::vector<std::vector<int>> grid(GRID_HEIGHT, std::vector<int>(GRID_WIDTH, 0));
 
@@ -62,6 +65,18 @@ bool init(SDL_Window*& window, SDL_Renderer*& renderer) {
     }
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     return true;
+}
+
+void initializePiecesQueue() {
+    // Clear the queue in case it's not empty
+    while (!nextPiecesQueue.empty()) {
+        nextPiecesQueue.pop();
+    }
+
+    // Fill the queue with random pieces
+    for (int i = 0; i < QUEUE_SIZE; ++i) {
+        nextPiecesQueue.push(rand() % tetrominoes.size());
+    }
 }
 
 void drawVisibleGrid(SDL_Renderer* renderer) {
@@ -124,6 +139,34 @@ void drawBorders(SDL_Renderer* renderer) {
     SDL_RenderFillRect(renderer, &bottomBorder);
 }
 
+void drawQueue(SDL_Renderer* renderer) {
+    // Position to draw the queue (to the right of the visible grid)
+    int queueX = SCREEN_WIDTH - 8 * TILE_SIZE; // X position for the queue, adjust to be visible on the screen
+    int queueY = TILE_SIZE * 2; // Y position (start from 2 tiles below the top)
+
+    std::queue<int> tempQueue = nextPiecesQueue; // Create a copy of the queue to preserve it
+
+    // Loop through the next pieces in the queue
+    for (int i = 0; i < QUEUE_SIZE && !tempQueue.empty(); ++i) {
+        int piece = tempQueue.front(); // Get the next piece from the queue
+        tempQueue.pop(); // Remove the piece from the temporary queue
+
+        // Draw the tetromino shape
+        for (int j = 0; j < 4; ++j) {
+            int x = (tetrominoes[piece][j] % 2) * TILE_SIZE + queueX;  // Adjust block X position
+            int y = (tetrominoes[piece][j] / 2) * TILE_SIZE + queueY + (i * 4 * TILE_SIZE); // Adjust Y position with spacing
+
+            // Set the color for the current tetromino
+            SDL_Color color = COLORS[piece];
+            SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
+
+            // Draw the tetromino block
+            SDL_Rect block = { x, y, TILE_SIZE, TILE_SIZE };
+            SDL_RenderFillRect(renderer, &block);
+        }
+    }
+}
+
 // Rotate the tetromino
 void rotateTetromino() {
     if (currentPiece == 6) return; // O-shape doesn't rotate
@@ -149,7 +192,13 @@ bool moveTetromino(int dx, int dy) {
 
 // Function to spawn a new tetromino with randomized X position and Y at the top
 void spawnNewTetromino() {
-    currentPiece = rand() % tetrominoes.size();    // Random tetromino (updated)
+    // Get the next piece from the queue
+    currentPiece = nextPiecesQueue.front();
+    nextPiecesQueue.pop();
+
+    // Add a new random piece to the back of the queue
+    nextPiecesQueue.push(rand() % tetrominoes.size());
+
     currentTetromino = tetrominoes[currentPiece];    // Assign shape
 
     // Randomize X position within the grid width, ensuring it's within bounds
@@ -202,6 +251,8 @@ int main(int argc, char* args[]) {
     currentPiece = rand() % 7;
     currentTetromino = tetrominoes[currentPiece];
 
+    initializePiecesQueue();
+
     while (!quit) {
         while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
@@ -247,7 +298,13 @@ int main(int argc, char* args[]) {
         SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
         SDL_RenderClear(renderer);
 
-        drawGrid(renderer);
+        if (paused) { // Only draw the queue when paused
+            drawQueue(renderer);
+        }
+        else {
+            drawGrid(renderer);
+        }
+
         drawVisibleGrid(renderer);
         drawBorders(renderer);
 
