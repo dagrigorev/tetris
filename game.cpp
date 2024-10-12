@@ -9,7 +9,7 @@
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
-const int TILE_SIZE = 8;
+const int TILE_SIZE = 16;
 const int GRID_WIDTH = SCREEN_WIDTH / TILE_SIZE;
 const int GRID_HEIGHT = SCREEN_HEIGHT / TILE_SIZE;
 const int QUEUE_SIZE = 4; // Number of shapes to preview
@@ -91,6 +91,7 @@ void drawVisibleGrid(SDL_Renderer* renderer) {
     }
 }
 
+// Adjust the bottom line visibility in grid rendering
 void drawGrid(SDL_Renderer* renderer) {
     // Draw each block of the grid
     for (int y = 0; y < GRID_HEIGHT; ++y) {
@@ -109,7 +110,7 @@ void drawGrid(SDL_Renderer* renderer) {
         int x = (currentTetromino[i] % 2) + currentX;
         int y = (currentTetromino[i] / 2) + currentY;
 
-        // Only draw if the block is within the grid
+        // Only draw if the block is within the grid, considering the bottom line
         if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT) {
             SDL_Rect block = { x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE };
             SDL_Color color = COLORS[currentPiece]; // Use the current piece's color
@@ -135,8 +136,8 @@ void drawBorders(SDL_Renderer* renderer) {
     SDL_RenderFillRect(renderer, &topBorder);
 
     // Draw bottom border
-    SDL_Rect bottomBorder = { 0, SCREEN_HEIGHT - TILE_SIZE, SCREEN_WIDTH, TILE_SIZE };
-    SDL_RenderFillRect(renderer, &bottomBorder);
+    //SDL_Rect bottomBorder = { 0, SCREEN_HEIGHT - TILE_SIZE, SCREEN_WIDTH, TILE_SIZE };
+    //SDL_RenderFillRect(renderer, &bottomBorder);
 }
 
 void drawQueue(SDL_Renderer* renderer) {
@@ -167,13 +168,41 @@ void drawQueue(SDL_Renderer* renderer) {
     }
 }
 
-// Rotate the tetromino
+// Rotate the tetromino with proper center calculation
 void rotateTetromino() {
     if (currentPiece == 6) return; // O-shape doesn't rotate
+
+    // Determine the center of rotation dynamically
+    int centerX = currentTetromino[1] % 2; // Use the second block as the pivot
+    int centerY = currentTetromino[1] / 2;
+
+    // Apply the rotation for all 4 blocks of the tetromino
     for (int i = 0; i < 4; ++i) {
-        int x = currentTetromino[i] % 2;
-        int y = currentTetromino[i] / 2;
-        currentTetromino[i] = y + 2 * (1 - x); // Simple 90-degree rotation
+        int x = (currentTetromino[i] % 2) - centerX;
+        int y = (currentTetromino[i] / 2) - centerY;
+
+        // Rotate 90 degrees clockwise (transpose and reverse rows)
+        int newX = -y;
+        int newY = x;
+
+        // Recalculate the position relative to the new rotation
+        currentTetromino[i] = (newY + centerY) * 2 + (newX + centerX);
+    }
+
+    // Check boundaries and prevent rotations that go out of bounds or collide
+    for (int i = 0; i < 4; ++i) {
+        int x = (currentTetromino[i] % 2) + currentX;
+        int y = (currentTetromino[i] / 2) + currentY;
+
+        // Adjust if out of bounds
+        if (x < 0) currentX++;   // Move right if out of left boundary
+        if (x >= GRID_WIDTH) currentX--;   // Move left if out of right boundary
+        if (y >= GRID_HEIGHT) currentY--;  // Prevent from going below the grid
+
+        // Prevent rotation if it's overlapping an existing block
+        if (grid[y][x] != 0) {
+            return; // Prevent rotation if it collides
+        }
     }
 }
 
@@ -273,7 +302,7 @@ int main(int argc, char* args[]) {
 
         if (!paused) {
             // Move tetromino down after a certain time
-            if (++dropCounter >= 100) { // Change this value to adjust fall speed
+            if (++dropCounter >= 350) { // Change this value to adjust fall speed
                 if (!moveTetromino(0, 1)) {
                     // Lock tetromino in place if it can't move further
                     for (int i = 0; i < 4; ++i) {
