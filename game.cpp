@@ -20,18 +20,23 @@ const SDL_Color COLORS[] = {
     {255, 255, 0, 255},  // Yellow
     {0, 255, 255, 255},  // Cyan
     {255, 165, 0, 255},  // Orange
-    {128, 0, 128, 255}   // Purple
+    {128, 0, 128, 255},   // Purple
+    {255, 105, 180, 255}, // Pink
+    {128, 128, 128, 255}, // Gray
+    {0, 128, 0, 255}      // Dark Green
 };
 
 // Tetromino shapes
-std::array<std::array<int, 4>, 7> tetrominoes = {{
+std::array<std::array<int, 4>, 9> tetrominoes = {{
     {{1, 3, 5, 7}}, // I shape
     {{2, 4, 5, 7}}, // Z shape
     {{3, 5, 4, 6}}, // S shape
     {{3, 5, 4, 7}}, // T shape
     {{2, 3, 5, 7}}, // L shape
     {{3, 5, 7, 6}}, // J shape
-    {{2, 3, 4, 5}}  // O shape (square)
+    {{2, 3, 4, 5}}, // O shape (square)
+    {{2, 3, 4, 6}}, // New shape 1 (example: a long "S")
+    {{4, 5, 6, 7}}  // New shape 2 (example: a line of 4)
 }};
 
 int currentPiece = 0; // The index of the current tetromino shape
@@ -144,7 +149,7 @@ bool moveTetromino(int dx, int dy) {
 
 // Function to spawn a new tetromino with randomized X position and Y at the top
 void spawnNewTetromino() {
-    currentPiece = rand() % 7;                       // Random tetromino
+    currentPiece = rand() % tetrominoes.size();    // Random tetromino (updated)
     currentTetromino = tetrominoes[currentPiece];    // Assign shape
 
     // Randomize X position within the grid width, ensuring it's within bounds
