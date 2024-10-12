@@ -84,3 +84,6 @@ coverage.xml
 # Personal preferences (if shared across multiple projects)
 .editorconfig
 .codestyle
+
+# CMake folders
+CMakeFiles/
