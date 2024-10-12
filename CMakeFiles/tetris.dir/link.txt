@@ -1,0 +1,1 @@
+g++ -Wl,--enable-auto-import CMakeFiles/tetris.dir/game.cpp.o -o bin/tetris.exe -Wl,--out-implib,libtetris.dll.a -Wl,--major-image-version,0,--minor-image-version,0   -L/usr/local/lib  -lmingw32 -lSDL2main -lSDL2
