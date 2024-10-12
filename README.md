@@ -42,9 +42,9 @@ This is a classic Tetris game implemented in C++ using the SDL2 library.
 
 ## Controls
 
-    * Left Arrow: _Move tetromino left_
-    * Right Arrow: _Move tetromino right_
-    * Down Arrow: _Soft drop tetromino_
-    * Up Arrow: _Rotate tetromino_
-    * Spacebar: _Pause/unpause game_
-    * Escape: _Quit game_
+* Left Arrow: _Move tetromino left_
+* Right Arrow: _Move tetromino right_
+* Down Arrow: _Soft drop tetromino_
+* Up Arrow: _Rotate tetromino_
+* Spacebar: _Pause/unpause game_
+* Escape: _Quit game_
