@@ -1,50 +1,62 @@
 # Tetris
 
-This is a classic Tetris game implemented in C++ using the SDL2 library.
+Полностью обновлённая версия простого Tetris на **C++17 + SDL2**.
 
-## Demo
+## Что исправлено
 
-![Tetris Gameplay](tetris.gif)
+- Убран монолитный `game.cpp`: код разделён на `App`, `Game`, `Renderer`, `Tetromino`.
+- Удалены build-артефакты из структуры проекта.
+- CMake переведён на `FetchContent`: SDL2 скачивается и собирается автоматически.
+- Поле приведено к нормальному размеру Tetris: `10x20`.
+- Оставлены 7 классических фигур.
+- Добавлена 7-bag генерация фигур вместо простого `rand()`.
+- Исправлены небезопасные повороты: сначала проверяется кандидат, потом применяется состояние.
+- Добавлены wall-kick попытки для поворота около стен.
+- Добавлен time-based game loop вместо frame-counter логики.
+- Добавлены score, level и lines. Значения выводятся в заголовке окна.
+- Добавлены ghost piece, next queue, pause, restart и game over.
 
-## Features
+## Управление
 
-- Classic Tetris gameplay with 7 standard tetromino shapes.
-- Colorful blocks and grid.
-- Line clearing mechanics.
-- Game over detection.
-- Pause functionality (press Spacebar).
+| Клавиша | Действие |
+|---|---|
+| Left / A | Влево |
+| Right / D | Вправо |
+| Down / S | Soft drop |
+| Up / W / X | Поворот по часовой |
+| Z | Поворот против часовой |
+| Space | Hard drop |
+| P | Пауза |
+| R | Рестарт |
+| Esc | Выход |
 
-## Requirements
+## Сборка
 
-- SDL2 library
-- C++ compiler (e.g., g++, clang++)
+Требуется CMake 3.24+ и C++17 компилятор.
 
-## Building
+```bash
+cmake -S . -B build
+cmake --build build --config Release
+```
 
-1. Make sure you have SDL2 installed on your system.
-2. Clone this repository.
-3. Navigate to the project directory.
-4. Compile the code using a C++ compiler:
-   ```bash
-   g++ -o tetris game.cpp -lSDL2 
-   ```
-   or use `CMake`
-   ```bash
-   cmake .
-   ```
-   ```bash
-   cmake --build .
-   ```
-5. Run the executable
-   ```bash
-   ./tetris
-   ```
+Запуск:
 
-## Controls
+```bash
+./build/bin/tetris
+```
 
-* Left Arrow: _Move tetromino left_
-* Right Arrow: _Move tetromino right_
-* Down Arrow: _Soft drop tetromino_
-* Up Arrow: _Rotate tetromino_
-* Spacebar: _Pause/unpause game_
-* Escape: _Quit game_
+На Windows с multi-config генераторами исполняемый файл может быть здесь:
+
+```bash
+build/bin/Release/tetris.exe
+```
+
+## Структура
+
+```text
+src/
+  App.h / App.cpp           SDL lifecycle, event loop
+  Game.h / Game.cpp         игровая модель, правила, score, level
+  Renderer.h / Renderer.cpp SDL rendering
+  Tetromino.h / Tetromino.cpp фигуры и цвета
+```

@@ -1,89 +1,44 @@
-# Compiled Object files
+# Build outputs
+build/
+out/
+bin/
+dist/
+Debug/
+Release/
+x64/
+x86/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+*.cmake
+!CMakeLists.txt
+
+# Binaries / objects
 *.o
 *.obj
 *.a
 *.lib
-
-# Compiled Executable files
+*.dll
+*.dylib
+*.so
 *.exe
 *.out
 *.app
+*.pdb
+*.ilk
 
-# Precompiled Header files
-*.gch
-*.pch
-
-# SDL2 build artifacts (adjust paths if needed)
-build/
-Debug/
-Release/
-bin/
-*.dSYM
-
-# IDE/Editor specific files
-# Xcode
-*.xcuserstate
-*.xcworkspace
-xcuserdata/
-
-# Visual Studio
+# IDEs
+.vscode/
+.idea/
 *.suo
 *.user
-*.ncb
-*.sln.docstates
-*.vcxproj.filters
 *.vcxproj.user
+*.vcxproj.filters
 
-# CLion
-.idea/
-
-# Code::Blocks
-*.layout
-*.depend
-
-# Qt Creator
-*.qrc.*
-*.qm
-
-# macOS
+# OS / temp
 .DS_Store
-
-# Windows
 Thumbs.db
-
-# Linux
-*~
-
-# Build system artifacts
-Makefile.in
-*.make
-
-# Package manager files
-package-lock.json
-yarn.lock
-
-# Log files
 *.log
-
-# Temporary files
 *.tmp
-temp*
-tmp*
-
-# Configuration files (consider version controlling important ones)
-config.ini
-settings.json
-
-# Documentation builds
-docs/_build/
-
-# Test results
-test_results/
-coverage.xml
-
-# Personal preferences (if shared across multiple projects)
-.editorconfig
-.codestyle
-
-# CMake folders
-CMakeFiles/

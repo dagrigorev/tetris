@@ -1,33 +1,59 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.24)
 
-# Set the project name
-project(Tetris VERSION 1.0)
+project(Tetris
+    VERSION 2.0.0
+    DESCRIPTION "Clean SDL2 Tetris implementation"
+    LANGUAGES CXX
+)
 
-# Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Specify the compiler (optional, CMake should detect it)
-set(CMAKE_CXX_COMPILER g++)
+include(FetchContent)
 
-# Set output directory
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+# SDL2 is downloaded and built automatically by CMake.
+# A fixed release tag keeps builds reproducible.
+set(SDL_SHARED OFF CACHE BOOL "Build SDL2 shared library" FORCE)
+set(SDL_STATIC ON CACHE BOOL "Build SDL2 static library" FORCE)
+set(SDL_TEST OFF CACHE BOOL "Build SDL2 tests" FORCE)
+set(SDL_TEST_LIBRARY OFF CACHE BOOL "Build SDL2 test library" FORCE)
+set(SDL_INSTALL OFF CACHE BOOL "Install SDL2" FORCE)
 
-# Find SDL2 library
-set(SDL2_INCLUDE_DIR "/usr/local/include")
-set(SDL2_LIBRARY_DIR "/usr/local/lib")
-set(SDL2_DLL_DIR "/usr/local/bin")
+FetchContent_Declare(
+    SDL2
+    GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+    GIT_TAG release-2.30.10
+    GIT_SHALLOW TRUE
+)
 
-include_directories(${SDL2_INCLUDE_DIR})
-link_directories(${SDL2_LIBRARY_DIR})
+FetchContent_MakeAvailable(SDL2)
 
-# Add executable
-add_executable(tetris game.cpp)
+add_executable(tetris
+    src/main.cpp
+    src/App.cpp
+    src/Game.cpp
+    src/Renderer.cpp
+    src/Tetromino.cpp
+)
 
-# Link SDL2 libraries
-target_link_libraries(tetris mingw32 SDL2main SDL2)
+target_include_directories(tetris PRIVATE src)
+target_compile_definitions(tetris PRIVATE SDL_MAIN_HANDLED)
 
-# Post-build step to copy SDL2 DLLs to output directory
-add_custom_command(TARGET tetris POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${SDL2_DLL_DIR}/SDL2.dll" $<TARGET_FILE_DIR:tetris>)
+if(TARGET SDL2::SDL2-static)
+    target_link_libraries(tetris PRIVATE SDL2::SDL2-static)
+elseif(TARGET SDL2::SDL2)
+    target_link_libraries(tetris PRIVATE SDL2::SDL2)
+else()
+    message(FATAL_ERROR "SDL2 target was not created by FetchContent")
+endif()
+
+if(MSVC)
+    target_compile_options(tetris PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(tetris PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+set_target_properties(tetris PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
