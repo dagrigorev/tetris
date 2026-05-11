@@ -1,44 +1,21 @@
-# Build outputs
 build/
+cmake-build-*/
 out/
 bin/
-dist/
-Debug/
-Release/
-x64/
-x86/
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
-compile_commands.json
-*.cmake
-!CMakeLists.txt
-
-# Binaries / objects
-*.o
-*.obj
-*.a
-*.lib
+obj/
+.vscode/
+.idea/
+*.user
+*.suo
+*.log
+*.tmp
+*.exe
 *.dll
 *.dylib
 *.so
-*.exe
-*.out
-*.app
-*.pdb
-*.ilk
-
-# IDEs
-.vscode/
-.idea/
-*.suo
-*.user
-*.vcxproj.user
-*.vcxproj.filters
-
-# OS / temp
+*.a
+*.lib
+*.o
+*.obj
 .DS_Store
 Thumbs.db
-*.log
-*.tmp

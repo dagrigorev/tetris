@@ -1,95 +1,77 @@
-# Tetris C++23 / clang++
+# Layered Games / Tetris C++23
 
-Полностью обновлённая версия простого Tetris на **C++23 + SDL2**, ориентированная на сборку через **clang++** и CMake `FetchContent`.
+Проект переписан как заготовка для набора игр, а не как одиночный `game.cpp`.
 
-## Что изменено в этой версии
+## Слои
 
-- Проект переведён на стандарт **C++23**.
-- `CMakeLists.txt` требует `cxx_std_23` и выставляет `CMAKE_CXX_STANDARD 23`.
-- Добавлены `CMakePresets.json` профили для `clang++`:
-  - `clang-debug`
-  - `clang-release`
-- SDL2 подключается через `FetchContent`, без ручной установки путей.
-- Для clang включены строгие предупреждения: `-Wall`, `-Wextra`, `-Wpedantic`, `-Wconversion`, `-Wshadow` и другие.
-- Для Debug-пресета включены sanitizers: AddressSanitizer + UndefinedBehaviorSanitizer.
-- Логика времени переведена на `std::chrono::duration<double>`.
-- Используются современные C++-подходы: `std::ranges`, `std::to_underlying`, structured bindings, `using enum`, `final`, `[[nodiscard]]`.
+```text
+include/gamecore + src/core
+  Общеигровые абстракции: IGame, IRenderer2D, IInputSource, GameRegistry, EventBus, Application.
 
-## Игровые исправления
+include/games/tetris + src/games/tetris
+  Предметная логика Tetris: Board, Tetromino, SevenBagTetrominoProvider, scoring strategy, TetrisGame.
 
-- Убран монолитный `game.cpp`: код разделён на `App`, `Game`, `Renderer`, `Tetromino`.
-- Поле приведено к классическому размеру Tetris: `10x20`.
-- Оставлены 7 классических фигур.
-- Добавлена 7-bag генерация фигур вместо `rand()`.
-- Повороты безопасны: сначала проверяется кандидат, только потом меняется состояние.
-- Добавлены простые wall-kick попытки.
-- Добавлены score, lines, level, ghost piece, next queue, pause, restart и game over.
-
-## Требования
-
-- CMake 3.24+
-- Ninja
-- clang / clang++ с поддержкой C++23
-- Интернет при первой конфигурации, потому что SDL2 скачивается через `FetchContent`
-
-## Сборка clang++ Debug
-
-```bash
-cmake --preset clang-debug
-cmake --build --preset clang-debug
+include/platform/sdl2 + src/platform/sdl2
+  Конкретная реализация окна, ввода и 2D-рендера через SDL2.
 ```
 
-Исполняемый файл:
+## Использованные принципы и паттерны
 
-```bash
-./build/clang-debug/bin/tetris
-```
+- SOLID:
+  - `Application` зависит от абстракций `IGame`, `IRenderer2D`, `IInputSource`.
+  - SDL2 изолирован в `platform/sdl2`.
+  - Tetris не знает про `SDL_Renderer` и `SDL_Window`.
+- GoF:
+  - **Abstract Factory / Factory Method**: `IGameFactory`, `TetrisGameFactory`.
+  - **Registry**: `GameRegistry` для подключения игр.
+  - **Strategy**: `IScoringStrategy`, `ClassicScoringStrategy`.
+  - **Observer**: `EventBus`.
+  - **Command**: `InputCommand` как абстрактные команды ввода.
+  - **State**: `TetrisPhase` (`Playing`, `Paused`, `GameOver`).
+  - **Bridge**: `IRenderer2D` отделяет игровую логику от SDL2.
 
-## Сборка clang++ Release
+## Сборка clang++
 
 ```bash
 cmake --preset clang-release
 cmake --build --preset clang-release
 ```
 
-Исполняемый файл:
+Debug:
 
 ```bash
-./build/clang-release/bin/tetris
+cmake --preset clang-debug
+cmake --build --preset clang-debug
 ```
 
-## Ручная сборка без preset
+Запуск:
 
 ```bash
-cmake -S . -B build/clang-release \
-  -G Ninja \
-  -DCMAKE_C_COMPILER=clang \
-  -DCMAKE_CXX_COMPILER=clang++ \
-  -DCMAKE_BUILD_TYPE=Release
+./build/clang-release/layered_tetris
+```
 
-cmake --build build/clang-release
+На Windows путь будет примерно:
+
+```powershell
+.\build\clang-release\layered_tetris.exe
 ```
 
 ## Управление
 
-| Клавиша | Действие |
-|---|---|
-| Left / A | Влево |
-| Right / D | Вправо |
-| Down / S | Soft drop |
-| Up / W / X | Поворот по часовой |
-| Z | Поворот против часовой |
-| Space | Hard drop |
-| P | Пауза |
-| R | Рестарт |
-| Esc | Выход |
+- `Left / A` — влево
+- `Right / D` — вправо
+- `Down / S` — soft drop
+- `Up / W / X` — поворот по часовой
+- `Z` — поворот против часовой
+- `Space` — hard drop
+- `P` — pause
+- `R` — restart
+- `Esc` — выход
 
-## Структура
+## Как добавить новую игру
 
-```text
-src/
-  App.h / App.cpp             SDL lifecycle, event loop
-  Game.h / Game.cpp           игровая модель, правила, score, level
-  Renderer.h / Renderer.cpp   SDL rendering
-  Tetromino.h / Tetromino.cpp фигуры и цвета
-```
+1. Создать `include/games/<game>` и `src/games/<game>`.
+2. Реализовать `IGame`.
+3. Реализовать `IGameFactory`.
+4. Зарегистрировать фабрику в `main.cpp` через `GameRegistry`.
+5. Не использовать SDL2 внутри предметного слоя — только абстракции из `gamecore`.
