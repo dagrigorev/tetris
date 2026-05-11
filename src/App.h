@@ -4,20 +4,23 @@
 #include "Renderer.h"
 
 #include <SDL.h>
+
 #include <memory>
 #include <string>
 
 namespace tetris {
 
-class App {
+class App final {
 public:
     App();
     ~App();
 
     App(const App&) = delete;
     App& operator=(const App&) = delete;
+    App(App&&) = delete;
+    App& operator=(App&&) = delete;
 
-    int run();
+    [[nodiscard]] int run();
 
 private:
     void handleEvents(bool& quit);

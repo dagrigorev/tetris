@@ -5,7 +5,7 @@
 
 int main(int, char**) {
     try {
-        tetris::App app;
+        auto app = tetris::App{};
         return app.run();
     } catch (const std::exception& ex) {
         std::cerr << "Fatal error: " << ex.what() << '\n';

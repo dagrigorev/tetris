@@ -1,12 +1,13 @@
 #pragma once
 
 #include <SDL.h>
+
 #include <array>
 #include <cstddef>
 
 namespace tetris {
 
-struct Cell {
+struct Cell final {
     int x{};
     int y{};
 };
@@ -24,14 +25,14 @@ enum class TetrominoType : int {
 
 using Shape = std::array<Cell, 4>;
 
-struct TetrominoDefinition {
+struct TetrominoDefinition final {
     std::array<Shape, 4> rotations{};
     SDL_Color color{};
 };
 
-const TetrominoDefinition& definition(TetrominoType type);
-const Shape& shape(TetrominoType type, int rotation);
-SDL_Color color(TetrominoType type);
-std::size_t tetrominoCount();
+[[nodiscard]] const TetrominoDefinition& definition(TetrominoType type);
+[[nodiscard]] const Shape& shape(TetrominoType type, int rotation);
+[[nodiscard]] SDL_Color color(TetrominoType type);
+[[nodiscard]] std::size_t tetrominoCount() noexcept;
 
 } // namespace tetris

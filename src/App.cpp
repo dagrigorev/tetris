@@ -1,9 +1,18 @@
 #include "App.h"
 
+#include <chrono>
 #include <iostream>
 #include <stdexcept>
+#include <string>
 
 namespace tetris {
+namespace {
+
+[[nodiscard]] Game::Seconds readPerformanceSeconds(Uint64 current, Uint64 previous, double frequency) noexcept {
+    return Game::Seconds{static_cast<double>(current - previous) / frequency};
+}
+
+} // namespace
 
 App::App() {
     SDL_SetMainReady();
@@ -13,7 +22,7 @@ App::App() {
     }
 
     window_ = SDL_CreateWindow(
-        "Tetris",
+        "Tetris C++23",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
         Renderer::WindowWidth,
@@ -21,16 +30,16 @@ App::App() {
         SDL_WINDOW_SHOWN
     );
 
-    if (!window_) {
+    if (window_ == nullptr) {
         throw std::runtime_error(std::string("SDL_CreateWindow failed: ") + SDL_GetError());
     }
 
     sdlRenderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (!sdlRenderer_) {
+    if (sdlRenderer_ == nullptr) {
         sdlRenderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_SOFTWARE);
     }
 
-    if (!sdlRenderer_) {
+    if (sdlRenderer_ == nullptr) {
         throw std::runtime_error(std::string("SDL_CreateRenderer failed: ") + SDL_GetError());
     }
 
@@ -41,12 +50,12 @@ App::App() {
 App::~App() {
     renderer_.reset();
 
-    if (sdlRenderer_) {
+    if (sdlRenderer_ != nullptr) {
         SDL_DestroyRenderer(sdlRenderer_);
         sdlRenderer_ = nullptr;
     }
 
-    if (window_) {
+    if (window_ != nullptr) {
         SDL_DestroyWindow(window_);
         window_ = nullptr;
     }
@@ -56,16 +65,16 @@ App::~App() {
 
 int App::run() {
     bool quit = false;
-    Uint64 previousCounter = SDL_GetPerformanceCounter();
-    const double frequency = static_cast<double>(SDL_GetPerformanceFrequency());
+    auto previousCounter = SDL_GetPerformanceCounter();
+    const auto frequency = static_cast<double>(SDL_GetPerformanceFrequency());
 
     while (!quit) {
-        const Uint64 currentCounter = SDL_GetPerformanceCounter();
-        const double deltaSeconds = static_cast<double>(currentCounter - previousCounter) / frequency;
+        const auto currentCounter = SDL_GetPerformanceCounter();
+        const auto delta = readPerformanceSeconds(currentCounter, previousCounter, frequency);
         previousCounter = currentCounter;
 
         handleEvents(quit);
-        game_.update(deltaSeconds);
+        game_.update(delta);
         updateWindowTitle();
         renderer_->render(game_);
     }
@@ -127,7 +136,7 @@ void App::handleKeyDown(SDL_Keycode key, bool& quit) {
 }
 
 void App::updateWindowTitle() {
-    const std::string title = game_.titleText();
+    const auto title = game_.titleText();
     if (title != lastTitle_) {
         SDL_SetWindowTitle(window_, title.c_str());
         lastTitle_ = title;

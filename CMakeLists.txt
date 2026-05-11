@@ -1,14 +1,15 @@
 cmake_minimum_required(VERSION 3.24)
 
 project(Tetris
-    VERSION 2.0.0
-    DESCRIPTION "Clean SDL2 Tetris implementation"
-    LANGUAGES CXX
+    VERSION 3.0.0
+    DESCRIPTION "Modern C++23 SDL2 Tetris implementation optimized for clang++"
+    LANGUAGES C CXX
 )
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(FetchContent)
 
@@ -40,6 +41,8 @@ add_executable(tetris
 target_include_directories(tetris PRIVATE src)
 target_compile_definitions(tetris PRIVATE SDL_MAIN_HANDLED)
 
+target_compile_features(tetris PRIVATE cxx_std_23)
+
 if(TARGET SDL2::SDL2-static)
     target_link_libraries(tetris PRIVATE SDL2::SDL2-static)
 elseif(TARGET SDL2::SDL2)
@@ -48,10 +51,31 @@ else()
     message(FATAL_ERROR "SDL2 target was not created by FetchContent")
 endif()
 
-if(MSVC)
-    target_compile_options(tetris PRIVATE /W4 /permissive-)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(tetris PRIVATE
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Wconversion
+        -Wshadow
+        -Wnon-virtual-dtor
+        -Wold-style-cast
+        -Wcast-align
+        -Woverloaded-virtual
+        -Wnull-dereference
+        -Wdouble-promotion
+        -Wformat=2
+    )
+elseif(MSVC)
+    target_compile_options(tetris PRIVATE /W4 /permissive- /Zc:__cplusplus)
 else()
-    target_compile_options(tetris PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(tetris PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
+endif()
+
+option(TETRIS_ENABLE_SANITIZERS "Enable AddressSanitizer and UndefinedBehaviorSanitizer for clang/gcc debug builds" OFF)
+if(TETRIS_ENABLE_SANITIZERS AND CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT MSVC)
+    target_compile_options(tetris PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(tetris PRIVATE -fsanitize=address,undefined)
 endif()
 
 set_target_properties(tetris PROPERTIES

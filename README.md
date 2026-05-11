@@ -1,20 +1,74 @@
-# Tetris
+# Tetris C++23 / clang++
 
-Полностью обновлённая версия простого Tetris на **C++17 + SDL2**.
+Полностью обновлённая версия простого Tetris на **C++23 + SDL2**, ориентированная на сборку через **clang++** и CMake `FetchContent`.
 
-## Что исправлено
+## Что изменено в этой версии
+
+- Проект переведён на стандарт **C++23**.
+- `CMakeLists.txt` требует `cxx_std_23` и выставляет `CMAKE_CXX_STANDARD 23`.
+- Добавлены `CMakePresets.json` профили для `clang++`:
+  - `clang-debug`
+  - `clang-release`
+- SDL2 подключается через `FetchContent`, без ручной установки путей.
+- Для clang включены строгие предупреждения: `-Wall`, `-Wextra`, `-Wpedantic`, `-Wconversion`, `-Wshadow` и другие.
+- Для Debug-пресета включены sanitizers: AddressSanitizer + UndefinedBehaviorSanitizer.
+- Логика времени переведена на `std::chrono::duration<double>`.
+- Используются современные C++-подходы: `std::ranges`, `std::to_underlying`, structured bindings, `using enum`, `final`, `[[nodiscard]]`.
+
+## Игровые исправления
 
 - Убран монолитный `game.cpp`: код разделён на `App`, `Game`, `Renderer`, `Tetromino`.
-- Удалены build-артефакты из структуры проекта.
-- CMake переведён на `FetchContent`: SDL2 скачивается и собирается автоматически.
-- Поле приведено к нормальному размеру Tetris: `10x20`.
+- Поле приведено к классическому размеру Tetris: `10x20`.
 - Оставлены 7 классических фигур.
-- Добавлена 7-bag генерация фигур вместо простого `rand()`.
-- Исправлены небезопасные повороты: сначала проверяется кандидат, потом применяется состояние.
-- Добавлены wall-kick попытки для поворота около стен.
-- Добавлен time-based game loop вместо frame-counter логики.
-- Добавлены score, level и lines. Значения выводятся в заголовке окна.
-- Добавлены ghost piece, next queue, pause, restart и game over.
+- Добавлена 7-bag генерация фигур вместо `rand()`.
+- Повороты безопасны: сначала проверяется кандидат, только потом меняется состояние.
+- Добавлены простые wall-kick попытки.
+- Добавлены score, lines, level, ghost piece, next queue, pause, restart и game over.
+
+## Требования
+
+- CMake 3.24+
+- Ninja
+- clang / clang++ с поддержкой C++23
+- Интернет при первой конфигурации, потому что SDL2 скачивается через `FetchContent`
+
+## Сборка clang++ Debug
+
+```bash
+cmake --preset clang-debug
+cmake --build --preset clang-debug
+```
+
+Исполняемый файл:
+
+```bash
+./build/clang-debug/bin/tetris
+```
+
+## Сборка clang++ Release
+
+```bash
+cmake --preset clang-release
+cmake --build --preset clang-release
+```
+
+Исполняемый файл:
+
+```bash
+./build/clang-release/bin/tetris
+```
+
+## Ручная сборка без preset
+
+```bash
+cmake -S . -B build/clang-release \
+  -G Ninja \
+  -DCMAKE_C_COMPILER=clang \
+  -DCMAKE_CXX_COMPILER=clang++ \
+  -DCMAKE_BUILD_TYPE=Release
+
+cmake --build build/clang-release
+```
 
 ## Управление
 
@@ -30,33 +84,12 @@
 | R | Рестарт |
 | Esc | Выход |
 
-## Сборка
-
-Требуется CMake 3.24+ и C++17 компилятор.
-
-```bash
-cmake -S . -B build
-cmake --build build --config Release
-```
-
-Запуск:
-
-```bash
-./build/bin/tetris
-```
-
-На Windows с multi-config генераторами исполняемый файл может быть здесь:
-
-```bash
-build/bin/Release/tetris.exe
-```
-
 ## Структура
 
 ```text
 src/
-  App.h / App.cpp           SDL lifecycle, event loop
-  Game.h / Game.cpp         игровая модель, правила, score, level
-  Renderer.h / Renderer.cpp SDL rendering
+  App.h / App.cpp             SDL lifecycle, event loop
+  Game.h / Game.cpp           игровая модель, правила, score, level
+  Renderer.h / Renderer.cpp   SDL rendering
   Tetromino.h / Tetromino.cpp фигуры и цвета
 ```
