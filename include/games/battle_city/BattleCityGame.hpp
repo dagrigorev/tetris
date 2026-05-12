@@ -26,6 +26,7 @@ struct Tank final {
     double fireCooldown{};
     double aiTimer{};
     int hp{1};
+    std::uint8_t spriteKind{0};
 };
 
 struct Bullet final {
