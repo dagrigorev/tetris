@@ -15,6 +15,9 @@ public:
     void fillRect(gamecore::Recti rect, gamecore::Color color) override;
     void drawRect(gamecore::Recti rect, gamecore::Color color) override;
     void drawLine(gamecore::Vec2i from, gamecore::Vec2i to, gamecore::Color color) override;
+    void fillCircle(gamecore::Vec2i center, int radius, gamecore::Color color) override;
+    void drawCircle(gamecore::Vec2i center, int radius, gamecore::Color color) override;
+    void fillTriangle(gamecore::Vec2i a, gamecore::Vec2i b, gamecore::Vec2i c, gamecore::Color color) override;
     void drawText(gamecore::Vec2i position, std::string_view text, gamecore::Color color, int scale) override;
 
 private:

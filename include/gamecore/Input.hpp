@@ -7,6 +7,8 @@ namespace gamecore {
 enum class InputCommand {
     MoveLeft,
     MoveRight,
+    MoveUp,
+    MoveDown,
     SoftDrop,
     HardDrop,
     RotateClockwise,

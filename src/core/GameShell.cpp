@@ -150,12 +150,12 @@ void GameShell::renderMenu(IRenderer2D& renderer) const {
     renderer.drawText({174, 112}, "LAYERED GAMES", {236, 244, 255, 255}, 4);
     renderer.drawText({222, 166}, "SELECT A GAME", {130, 180, 255, 255}, 2);
 
-    const Recti menuPanel{170, 242, 420, 210};
+    const Recti menuPanel{170, 226, 420, 286};
     renderer.fillRect(menuPanel, {8, 12, 28, 225});
     renderer.drawRect(menuPanel, {74, 98, 160, 255});
 
     for (std::size_t i = 0; i < games_.size(); ++i) {
-        const auto y = 284 + static_cast<int>(i) * 58;
+        const auto y = 266 + static_cast<int>(i) * 54;
         const bool selected = static_cast<int>(i) == selectedIndex_;
         const Recti item{204, y - 12, 352, 42};
         renderer.fillRect(item, selected ? Color{28, 55, 110, 230} : Color{13, 18, 40, 190});
@@ -164,9 +164,9 @@ void GameShell::renderMenu(IRenderer2D& renderer) const {
         renderer.drawText({270, y}, games_[i].displayName, selected ? Color{245, 250, 255, 255} : Color{180, 195, 220, 255}, 2);
     }
 
-    renderer.drawText({176, 502}, "UP DOWN OR W S - SELECT", {150, 170, 205, 255}, 1);
-    renderer.drawText({176, 522}, "ENTER OR SPACE - START", {150, 170, 205, 255}, 1);
-    renderer.drawText({176, 542}, "ESC - BACK TO MENU OR EXIT", {150, 170, 205, 255}, 1);
+    renderer.drawText({176, 534}, "UP DOWN OR W S - SELECT", {150, 170, 205, 255}, 1);
+    renderer.drawText({176, 554}, "ENTER OR SPACE - START", {150, 170, 205, 255}, 1);
+    renderer.drawText({176, 574}, "ESC - BACK TO MENU OR EXIT", {150, 170, 205, 255}, 1);
 
     renderer.endFrame();
 }

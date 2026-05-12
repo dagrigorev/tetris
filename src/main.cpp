@@ -7,6 +7,8 @@
 #include "gamecore/GameRegistry.hpp"
 #include "gamecore/GameShell.hpp"
 #include "games/arkanoid/ArkanoidGameFactory.hpp"
+#include "games/galaga/GalagaGameFactory.hpp"
+#include "games/pacman/PacmanGameFactory.hpp"
 #include "games/tetris/TetrisGameFactory.hpp"
 #include "platform/sdl2/Sdl2InputSource.hpp"
 #include "platform/sdl2/Sdl2Renderer2D.hpp"
@@ -27,10 +29,24 @@ int main(int argc, char** argv) {
         events.subscribe("arkanoid.level_completed", [](const gamecore::GameEvent& event) {
             std::cout << "Arkanoid completed. Score: " << event.value << '\n';
         });
+        events.subscribe("galaga.game_over", [](const gamecore::GameEvent& event) {
+            std::cout << "Galaga game over. Score: " << event.value << '\n';
+        });
+        events.subscribe("galaga.wave_cleared", [](const gamecore::GameEvent& event) {
+            std::cout << "Galaga wave cleared. Score: " << event.value << '\n';
+        });
+        events.subscribe("pacman.game_over", [](const gamecore::GameEvent& event) {
+            std::cout << "Pacman game over. Score: " << event.value << '\n';
+        });
+        events.subscribe("pacman.level_completed", [](const gamecore::GameEvent& event) {
+            std::cout << "Pacman completed. Score: " << event.value << '\n';
+        });
 
         gamecore::GameRegistry registry;
         registry.registerFactory(std::make_unique<games::tetris::TetrisGameFactory>(events));
         registry.registerFactory(std::make_unique<games::arkanoid::ArkanoidGameFactory>(events));
+        registry.registerFactory(std::make_unique<games::galaga::GalagaGameFactory>(events));
+        registry.registerFactory(std::make_unique<games::pacman::PacmanGameFactory>(events));
 
         auto shell = std::make_unique<gamecore::GameShell>(registry);
 

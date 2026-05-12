@@ -69,7 +69,11 @@ auto Sdl2InputSource::poll() -> gamecore::InputFrame {
     if (keyboard[SDL_SCANCODE_RIGHT] != 0 || keyboard[SDL_SCANCODE_D] != 0) {
         pushHeld(frame, gamecore::InputCommand::MoveRight);
     }
+    if (keyboard[SDL_SCANCODE_UP] != 0 || keyboard[SDL_SCANCODE_W] != 0) {
+        pushHeld(frame, gamecore::InputCommand::MoveUp);
+    }
     if (keyboard[SDL_SCANCODE_DOWN] != 0 || keyboard[SDL_SCANCODE_S] != 0) {
+        pushHeld(frame, gamecore::InputCommand::MoveDown);
         pushHeld(frame, gamecore::InputCommand::SoftDrop);
     }
 
