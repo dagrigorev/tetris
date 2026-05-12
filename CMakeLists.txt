@@ -89,6 +89,15 @@ add_library(game_pacman STATIC
 target_include_directories(game_pacman PUBLIC include)
 target_link_libraries(game_pacman PUBLIC game_core layered_games_options)
 
+
+add_library(game_battle_city STATIC
+    src/games/battle_city/BattleCityGame.cpp
+    src/games/battle_city/BattleCityGameFactory.cpp
+)
+
+target_include_directories(game_battle_city PUBLIC include)
+target_link_libraries(game_battle_city PUBLIC game_core layered_games_options)
+
 add_library(platform_sdl2 STATIC
     src/platform/sdl2/BitmapFont.cpp
     src/platform/sdl2/Sdl2InputSource.cpp
@@ -101,7 +110,7 @@ target_link_libraries(platform_sdl2 PUBLIC game_core layered_games_options SDL2:
 target_compile_definitions(platform_sdl2 PUBLIC SDL_MAIN_HANDLED)
 
 add_executable(layered_games src/main.cpp)
-target_link_libraries(layered_games PRIVATE game_core game_tetris game_arkanoid game_galaga game_pacman platform_sdl2 layered_games_options)
+target_link_libraries(layered_games PRIVATE game_core game_tetris game_arkanoid game_galaga game_pacman game_battle_city platform_sdl2 layered_games_options)
 target_compile_definitions(layered_games PRIVATE SDL_MAIN_HANDLED)
 
 if(WIN32)

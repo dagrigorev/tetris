@@ -28,6 +28,7 @@ void PacmanGame::restart() {
     score_ = 0;
     lives_ = 3;
     quit_ = false;
+    animationTime_ = 0.0;
     phase_ = PacmanPhase::Ready;
     resetPellets();
     resetRound();
@@ -86,6 +87,8 @@ void PacmanGame::handleInput(const gamecore::InputFrame& input) {
 void PacmanGame::update(const gamecore::Seconds deltaTime) {
     const auto dt = std::clamp(deltaTime.count(), 0.0, 0.035);
 
+    animationTime_ += dt;
+
     if (phase_ != PacmanPhase::Playing) {
         return;
     }
@@ -127,20 +130,27 @@ void PacmanGame::render(gamecore::IRenderer2D& renderer) const {
         }
     }
 
+    int ghostIndex = 0;
     for (const auto& ghost : ghosts_) {
+        const auto bob = static_cast<int>(std::lround(std::sin(animationTime_ * 9.0 + ghostIndex) * 1.4));
         const auto rect = actorRect(ghost.actor, 22);
-        const gamecore::Vec2i center{rect.x + rect.width / 2, rect.y + rect.height / 2};
+        const gamecore::Vec2i center{rect.x + rect.width / 2, rect.y + rect.height / 2 + bob};
+        const auto bodyTop = rect.y + bob;
 
-        renderer.fillCircle({center.x, rect.y + 11}, 11, ghost.color);
-        renderer.fillRect({rect.x, rect.y + 11, rect.width, 10}, ghost.color);
-        renderer.fillCircle({rect.x + 4, rect.y + 21}, 4, ghost.color);
-        renderer.fillCircle({rect.x + 11, rect.y + 21}, 4, ghost.color);
-        renderer.fillCircle({rect.x + 18, rect.y + 21}, 4, ghost.color);
+        renderer.fillCircle({center.x, bodyTop + 11}, 11, ghost.color);
+        renderer.fillRect({rect.x, bodyTop + 11, rect.width, 10}, ghost.color);
+        const auto wave = static_cast<int>(std::lround(std::sin(animationTime_ * 14.0 + ghostIndex) * 2.0));
+        renderer.fillCircle({rect.x + 4, bodyTop + 21 + wave}, 4, ghost.color);
+        renderer.fillCircle({rect.x + 11, bodyTop + 21 - wave}, 4, ghost.color);
+        renderer.fillCircle({rect.x + 18, bodyTop + 21 + wave}, 4, ghost.color);
+        renderer.drawLine({rect.x + 1, bodyTop + 13}, {rect.x + 21, bodyTop + 13}, {255, 255, 255, 45});
 
-        renderer.fillCircle({rect.x + 7, rect.y + 10}, 4, {245, 250, 255, 255});
-        renderer.fillCircle({rect.x + 15, rect.y + 10}, 4, {245, 250, 255, 255});
-        renderer.fillCircle({rect.x + 8, rect.y + 10}, 2, {20, 35, 115, 255});
-        renderer.fillCircle({rect.x + 16, rect.y + 10}, 2, {20, 35, 115, 255});
+        const auto eyeShift = directionVector(ghost.actor.direction);
+        renderer.fillCircle({rect.x + 7, bodyTop + 10}, 4, {245, 250, 255, 255});
+        renderer.fillCircle({rect.x + 15, bodyTop + 10}, 4, {245, 250, 255, 255});
+        renderer.fillCircle({rect.x + 8 + eyeShift.x, bodyTop + 10 + eyeShift.y}, 2, {20, 35, 115, 255});
+        renderer.fillCircle({rect.x + 16 + eyeShift.x, bodyTop + 10 + eyeShift.y}, 2, {20, 35, 115, 255});
+        ++ghostIndex;
     }
 
     const auto pac = actorRect(pacman_, 22);
@@ -149,14 +159,16 @@ void PacmanGame::render(gamecore::IRenderer2D& renderer) const {
     renderer.drawCircle(pacCenter, 11, {255, 245, 145, 220});
 
     const auto mouthColor = gamecore::Color{5, 7, 22, 255};
+    const auto moving = pacman_.direction != Direction::None && phase_ == PacmanPhase::Playing;
+    const auto mouth = moving ? (3 + static_cast<int>(std::lround((std::sin(animationTime_ * 18.0) + 1.0) * 4.0))) : 7;
     if (pacman_.direction == Direction::Right || pacman_.direction == Direction::None) {
-        renderer.fillTriangle(pacCenter, {pacCenter.x + 13, pacCenter.y - 7}, {pacCenter.x + 13, pacCenter.y + 7}, mouthColor);
+        renderer.fillTriangle(pacCenter, {pacCenter.x + 13, pacCenter.y - mouth}, {pacCenter.x + 13, pacCenter.y + mouth}, mouthColor);
     } else if (pacman_.direction == Direction::Left) {
-        renderer.fillTriangle(pacCenter, {pacCenter.x - 13, pacCenter.y - 7}, {pacCenter.x - 13, pacCenter.y + 7}, mouthColor);
+        renderer.fillTriangle(pacCenter, {pacCenter.x - 13, pacCenter.y - mouth}, {pacCenter.x - 13, pacCenter.y + mouth}, mouthColor);
     } else if (pacman_.direction == Direction::Up) {
-        renderer.fillTriangle(pacCenter, {pacCenter.x - 7, pacCenter.y - 13}, {pacCenter.x + 7, pacCenter.y - 13}, mouthColor);
+        renderer.fillTriangle(pacCenter, {pacCenter.x - mouth, pacCenter.y - 13}, {pacCenter.x + mouth, pacCenter.y - 13}, mouthColor);
     } else {
-        renderer.fillTriangle(pacCenter, {pacCenter.x - 7, pacCenter.y + 13}, {pacCenter.x + 7, pacCenter.y + 13}, mouthColor);
+        renderer.fillTriangle(pacCenter, {pacCenter.x - mouth, pacCenter.y + 13}, {pacCenter.x + mouth, pacCenter.y + 13}, mouthColor);
     }
 
     renderer.drawText({48, 10}, "PACMAN", {235, 244, 255, 255}, 2);

@@ -70,6 +70,7 @@ private:
     int lives_{3};
     int remainingPellets_{};
     bool quit_{};
+    double animationTime_{};
 
     void resetRound();
     void resetPellets();
