@@ -49,13 +49,13 @@ void GameShell::restart() {
 void GameShell::handleInput(const InputFrame& input) {
     using enum InputCommand;
 
-    if (input.contains(Quit)) {
+    if (input.isPressed(Quit)) {
         quit_ = true;
         return;
     }
 
     if (activeGame_ != nullptr) {
-        if (input.contains(Back)) {
+        if (input.isPressed(Back)) {
             returnToMenu();
             return;
         }
@@ -68,17 +68,17 @@ void GameShell::handleInput(const InputFrame& input) {
     }
 
     const auto count = static_cast<int>(games_.size());
-    if (input.contains(Back)) {
+    if (input.isPressed(Back)) {
         quit_ = true;
         return;
     }
-    if (input.contains(MenuUp)) {
+    if (input.isPressed(MenuUp)) {
         selectedIndex_ = wrapIndex(selectedIndex_ - 1, count);
     }
-    if (input.contains(MenuDown)) {
+    if (input.isPressed(MenuDown)) {
         selectedIndex_ = wrapIndex(selectedIndex_ + 1, count);
     }
-    if (input.contains(Select) || input.contains(HardDrop)) {
+    if (input.isPressed(Select) || input.isPressed(HardDrop)) {
         launchSelectedGame();
     }
 }

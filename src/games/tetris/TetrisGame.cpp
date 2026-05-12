@@ -43,6 +43,11 @@ void TetrisGame::restart() {
     phase_ = TetrisPhase::Playing;
     quit_ = false;
     gravityAccumulator_ = gamecore::Seconds::zero();
+    horizontalDirection_ = 0;
+    horizontalHoldTime_ = gamecore::Seconds::zero();
+    horizontalRepeatAccumulator_ = gamecore::Seconds::zero();
+    softDropHeld_ = false;
+    softDropRepeatAccumulator_ = gamecore::Seconds::zero();
 
     while (!nextQueue_.empty()) {
         nextQueue_.pop();
@@ -55,42 +60,60 @@ void TetrisGame::restart() {
 void TetrisGame::handleInput(const gamecore::InputFrame& input) {
     using enum gamecore::InputCommand;
 
-    if (input.contains(Quit)) {
+    if (input.isPressed(Quit)) {
         quit_ = true;
         return;
     }
 
-    if (input.contains(Restart)) {
+    if (input.isPressed(Restart)) {
         restart();
         return;
     }
 
-    if (input.contains(Pause) && phase_ != TetrisPhase::GameOver) {
+    if (input.isPressed(Pause) && phase_ != TetrisPhase::GameOver) {
         phase_ = phase_ == TetrisPhase::Paused ? TetrisPhase::Playing : TetrisPhase::Paused;
     }
 
     if (phase_ != TetrisPhase::Playing) {
+        horizontalDirection_ = 0;
+        softDropHeld_ = false;
         return;
     }
 
-    if (input.contains(MoveLeft)) {
-        (void)tryMove({-1, 0});
+    int requestedHorizontalDirection = 0;
+    if (input.isDown(MoveLeft)) {
+        requestedHorizontalDirection -= 1;
     }
-    if (input.contains(MoveRight)) {
-        (void)tryMove({1, 0});
+    if (input.isDown(MoveRight)) {
+        requestedHorizontalDirection += 1;
     }
-    if (input.contains(RotateClockwise)) {
-        (void)tryRotate(1);
-    }
-    if (input.contains(RotateCounterClockwise)) {
-        (void)tryRotate(-1);
-    }
-    if (input.contains(SoftDrop)) {
-        if (tryMove({0, 1})) {
-            scoring_->applySoftDrop(score_);
+
+    if (requestedHorizontalDirection != horizontalDirection_) {
+        horizontalDirection_ = requestedHorizontalDirection;
+        horizontalHoldTime_ = gamecore::Seconds::zero();
+        horizontalRepeatAccumulator_ = gamecore::Seconds::zero();
+        if (horizontalDirection_ != 0) {
+            (void)tryMove({horizontalDirection_, 0});
         }
     }
-    if (input.contains(HardDrop)) {
+
+    if (input.isPressed(RotateClockwise)) {
+        (void)tryRotate(1);
+    }
+    if (input.isPressed(RotateCounterClockwise)) {
+        (void)tryRotate(-1);
+    }
+
+    const bool requestedSoftDrop = input.isDown(SoftDrop);
+    if (requestedSoftDrop != softDropHeld_) {
+        softDropHeld_ = requestedSoftDrop;
+        softDropRepeatAccumulator_ = gamecore::Seconds::zero();
+        if (softDropHeld_) {
+            softDropStep();
+        }
+    }
+
+    if (input.isPressed(HardDrop)) {
         hardDrop();
     }
 }
@@ -99,6 +122,9 @@ void TetrisGame::update(const gamecore::Seconds deltaTime) {
     if (phase_ != TetrisPhase::Playing) {
         return;
     }
+
+    handleHorizontalHold(deltaTime);
+    handleSoftDropHold(deltaTime);
 
     gravityAccumulator_ += deltaTime;
     const auto interval = gravityInterval();
@@ -310,6 +336,46 @@ auto TetrisGame::ghostPiece() const -> Tetromino {
 auto TetrisGame::gravityInterval() const -> gamecore::Seconds {
     const auto milliseconds = std::max(80, 650 - ((score_.level - 1) * 45));
     return std::chrono::duration_cast<gamecore::Seconds>(std::chrono::milliseconds(milliseconds));
+}
+
+void TetrisGame::handleHorizontalHold(const gamecore::Seconds deltaTime) {
+    if (horizontalDirection_ == 0) {
+        return;
+    }
+
+    static constexpr auto initialDelay = gamecore::Seconds{0.16};
+    static constexpr auto repeatInterval = gamecore::Seconds{0.055};
+
+    horizontalHoldTime_ += deltaTime;
+    if (horizontalHoldTime_ < initialDelay) {
+        return;
+    }
+
+    horizontalRepeatAccumulator_ += deltaTime;
+    while (horizontalRepeatAccumulator_ >= repeatInterval) {
+        horizontalRepeatAccumulator_ -= repeatInterval;
+        (void)tryMove({horizontalDirection_, 0});
+    }
+}
+
+void TetrisGame::handleSoftDropHold(const gamecore::Seconds deltaTime) {
+    if (!softDropHeld_) {
+        return;
+    }
+
+    static constexpr auto repeatInterval = gamecore::Seconds{0.035};
+
+    softDropRepeatAccumulator_ += deltaTime;
+    while (softDropRepeatAccumulator_ >= repeatInterval) {
+        softDropRepeatAccumulator_ -= repeatInterval;
+        softDropStep();
+    }
+}
+
+void TetrisGame::softDropStep() {
+    if (tryMove({0, 1})) {
+        scoring_->applySoftDrop(score_);
+    }
 }
 
 auto TetrisGame::boardRect(const gamecore::Vec2i cell) -> gamecore::Recti {

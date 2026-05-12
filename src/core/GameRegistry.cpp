@@ -42,8 +42,16 @@ auto GameRegistry::availableGames() const -> std::vector<GameDescriptor> {
     return games;
 }
 
+auto InputFrame::isPressed(const InputCommand command) const -> bool {
+    return std::ranges::find(pressedCommands, command) != pressedCommands.end();
+}
+
+auto InputFrame::isDown(const InputCommand command) const -> bool {
+    return isPressed(command) || std::ranges::find(heldCommands, command) != heldCommands.end();
+}
+
 auto InputFrame::contains(const InputCommand command) const -> bool {
-    return std::ranges::find(commands, command) != commands.end();
+    return isDown(command);
 }
 
 } // namespace gamecore

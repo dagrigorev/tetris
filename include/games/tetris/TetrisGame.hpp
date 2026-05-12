@@ -58,6 +58,11 @@ private:
     TetrisPhase phase_{TetrisPhase::Playing};
     bool quit_{};
     gamecore::Seconds gravityAccumulator_{};
+    int horizontalDirection_{};
+    gamecore::Seconds horizontalHoldTime_{};
+    gamecore::Seconds horizontalRepeatAccumulator_{};
+    bool softDropHeld_{};
+    gamecore::Seconds softDropRepeatAccumulator_{};
 
     void fillPreviewQueue();
     void spawnNext();
@@ -68,6 +73,9 @@ private:
     void lockActive();
     [[nodiscard]] auto ghostPiece() const -> Tetromino;
     [[nodiscard]] auto gravityInterval() const -> gamecore::Seconds;
+    void handleHorizontalHold(gamecore::Seconds deltaTime);
+    void handleSoftDropHold(gamecore::Seconds deltaTime);
+    void softDropStep();
 
     static auto boardRect(gamecore::Vec2i cell) -> gamecore::Recti;
     static auto previewRect(gamecore::Vec2i cell, int index) -> gamecore::Recti;

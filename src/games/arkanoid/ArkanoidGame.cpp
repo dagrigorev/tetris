@@ -46,30 +46,30 @@ void ArkanoidGame::restart() {
 void ArkanoidGame::handleInput(const gamecore::InputFrame& input) {
     using enum gamecore::InputCommand;
 
-    if (input.contains(Quit)) {
+    if (input.isPressed(Quit)) {
         quit_ = true;
         return;
     }
 
-    if (input.contains(Restart)) {
+    if (input.isPressed(Restart)) {
         restart();
         return;
     }
 
-    if (input.contains(Pause) && (phase_ == ArkanoidPhase::Playing || phase_ == ArkanoidPhase::Paused)) {
+    if (input.isPressed(Pause) && (phase_ == ArkanoidPhase::Playing || phase_ == ArkanoidPhase::Paused)) {
         phase_ = phase_ == ArkanoidPhase::Paused ? ArkanoidPhase::Playing : ArkanoidPhase::Paused;
         return;
     }
 
     moveDirection_ = 0;
-    if (input.contains(MoveLeft)) {
+    if (input.isDown(MoveLeft)) {
         moveDirection_ -= 1;
     }
-    if (input.contains(MoveRight)) {
+    if (input.isDown(MoveRight)) {
         moveDirection_ += 1;
     }
 
-    if ((input.contains(Select) || input.contains(HardDrop)) && phase_ == ArkanoidPhase::Ready) {
+    if ((input.isPressed(Select) || input.isPressed(HardDrop)) && phase_ == ArkanoidPhase::Ready) {
         launchBall();
     }
 }

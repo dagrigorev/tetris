@@ -96,3 +96,28 @@ if(WIN32)
         VERBATIM
     )
 endif()
+
+# Keep final runnable artifacts in a predictable project-level folder.
+set(LAYERED_GAMES_DIST_DIR "${PROJECT_SOURCE_DIR}/dist" CACHE PATH "Directory for runnable build artifacts")
+
+add_custom_command(TARGET layered_games POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${LAYERED_GAMES_DIST_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:layered_games>
+        "${LAYERED_GAMES_DIST_DIR}/$<TARGET_FILE_NAME:layered_games>"
+    VERBATIM
+)
+
+if(WIN32)
+    add_custom_command(TARGET layered_games POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:SDL2::SDL2>
+            "${LAYERED_GAMES_DIST_DIR}/$<TARGET_FILE_NAME:SDL2::SDL2>"
+        VERBATIM
+    )
+endif()
+
+install(TARGETS layered_games RUNTIME DESTINATION .)
+if(WIN32)
+    install(FILES $<TARGET_FILE:SDL2::SDL2> DESTINATION .)
+endif()

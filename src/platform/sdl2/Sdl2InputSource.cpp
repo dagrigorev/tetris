@@ -6,8 +6,12 @@ namespace platform::sdl2 {
 
 namespace {
 
-void push(gamecore::InputFrame& frame, const gamecore::InputCommand command) {
-    frame.commands.push_back(command);
+void pushPressed(gamecore::InputFrame& frame, const gamecore::InputCommand command) {
+    frame.pressedCommands.push_back(command);
+}
+
+void pushHeld(gamecore::InputFrame& frame, const gamecore::InputCommand command) {
+    frame.heldCommands.push_back(command);
 }
 
 } // namespace
@@ -18,7 +22,7 @@ auto Sdl2InputSource::poll() -> gamecore::InputFrame {
     SDL_Event event{};
     while (SDL_PollEvent(&event) != 0) {
         if (event.type == SDL_QUIT) {
-            push(frame, gamecore::InputCommand::Quit);
+            pushPressed(frame, gamecore::InputCommand::Quit);
             continue;
         }
 
@@ -26,43 +30,47 @@ auto Sdl2InputSource::poll() -> gamecore::InputFrame {
             continue;
         }
 
+        // Edge-triggered commands: these actions must happen once per key press.
         switch (event.key.keysym.sym) {
-            case SDLK_ESCAPE: push(frame, gamecore::InputCommand::Back); break;
-            case SDLK_q: push(frame, gamecore::InputCommand::Quit); break;
-            case SDLK_LEFT:
-            case SDLK_a: push(frame, gamecore::InputCommand::MoveLeft); break;
-            case SDLK_RIGHT:
-            case SDLK_d: push(frame, gamecore::InputCommand::MoveRight); break;
+            case SDLK_ESCAPE: pushPressed(frame, gamecore::InputCommand::Back); break;
+            case SDLK_q: pushPressed(frame, gamecore::InputCommand::Quit); break;
             case SDLK_DOWN:
-                push(frame, gamecore::InputCommand::SoftDrop);
-                push(frame, gamecore::InputCommand::MenuDown);
-                break;
             case SDLK_s:
-                push(frame, gamecore::InputCommand::SoftDrop);
-                push(frame, gamecore::InputCommand::MenuDown);
+                pushPressed(frame, gamecore::InputCommand::MenuDown);
                 break;
             case SDLK_SPACE:
-                push(frame, gamecore::InputCommand::HardDrop);
-                push(frame, gamecore::InputCommand::Select);
+                pushPressed(frame, gamecore::InputCommand::HardDrop);
+                pushPressed(frame, gamecore::InputCommand::Select);
                 break;
             case SDLK_RETURN:
             case SDLK_KP_ENTER:
-                push(frame, gamecore::InputCommand::Select);
+                pushPressed(frame, gamecore::InputCommand::Select);
                 break;
             case SDLK_UP:
-                push(frame, gamecore::InputCommand::RotateClockwise);
-                push(frame, gamecore::InputCommand::MenuUp);
-                break;
             case SDLK_w:
-                push(frame, gamecore::InputCommand::RotateClockwise);
-                push(frame, gamecore::InputCommand::MenuUp);
+                pushPressed(frame, gamecore::InputCommand::RotateClockwise);
+                pushPressed(frame, gamecore::InputCommand::MenuUp);
                 break;
-            case SDLK_x: push(frame, gamecore::InputCommand::RotateClockwise); break;
-            case SDLK_z: push(frame, gamecore::InputCommand::RotateCounterClockwise); break;
-            case SDLK_p: push(frame, gamecore::InputCommand::Pause); break;
-            case SDLK_r: push(frame, gamecore::InputCommand::Restart); break;
+            case SDLK_x: pushPressed(frame, gamecore::InputCommand::RotateClockwise); break;
+            case SDLK_z: pushPressed(frame, gamecore::InputCommand::RotateCounterClockwise); break;
+            case SDLK_p: pushPressed(frame, gamecore::InputCommand::Pause); break;
+            case SDLK_r: pushPressed(frame, gamecore::InputCommand::Restart); break;
             default: break;
         }
+    }
+
+    // Level-triggered movement: these commands are emitted every frame while the
+    // physical key remains pressed. Game logic can therefore continue movement
+    // without depending on OS key repeat or key release events.
+    const auto* keyboard = SDL_GetKeyboardState(nullptr);
+    if (keyboard[SDL_SCANCODE_LEFT] != 0 || keyboard[SDL_SCANCODE_A] != 0) {
+        pushHeld(frame, gamecore::InputCommand::MoveLeft);
+    }
+    if (keyboard[SDL_SCANCODE_RIGHT] != 0 || keyboard[SDL_SCANCODE_D] != 0) {
+        pushHeld(frame, gamecore::InputCommand::MoveRight);
+    }
+    if (keyboard[SDL_SCANCODE_DOWN] != 0 || keyboard[SDL_SCANCODE_S] != 0) {
+        pushHeld(frame, gamecore::InputCommand::SoftDrop);
     }
 
     return frame;

@@ -58,31 +58,65 @@ include/platform/sdl2 + src/platform/sdl2
   - **State**: состояния Tetris, Arkanoid и меню.
   - **Bridge**: `IRenderer2D` отделяет игровую логику от SDL2.
 
-## Сборка clang++
+## Автоматическая сборка в `dist`
+
+Windows:
+
+```bat
+build.cmd -Configuration Release -Clean
+```
+
+Или напрямую через PowerShell:
+
+```powershell
+.\scripts\build.ps1 -Configuration Release -Clean
+```
+
+Скрипт автоматически:
+
+- конфигурирует CMake;
+- собирает target `layered_games`;
+- при необходимости подтягивает SDL2 через `FetchContent`;
+- копирует итоговый `layered_games.exe` и `SDL2.dll` в директорию `dist` в корне проекта.
+
+Запуск после сборки:
+
+```powershell
+.\dist\layered_games.exe
+```
+
+Debug-сборка:
+
+```powershell
+.\scripts\build.ps1 -Configuration Debug -Clean
+```
+
+Если SDL2 уже установлен и должен находиться через `find_package(SDL2 CONFIG REQUIRED)`, можно отключить загрузку SDL2:
+
+```powershell
+.\scripts\build.ps1 -Configuration Release -NoFetchSdl2
+```
+
+## Ручная сборка clang++
 
 ```bash
 cmake --preset clang-release
 cmake --build --preset clang-release
 ```
 
-Debug:
+После успешной сборки CMake post-build шаг также копирует исполняемый файл и runtime-зависимости в `dist`.
 
-```bash
-cmake --preset clang-debug
-cmake --build --preset clang-debug
-```
+## Модель ввода
 
-Запуск:
+Ввод разделен на два типа команд:
 
-```bash
-./build/clang-release/layered_games
-```
+- `pressedCommands` — одноразовые действия в кадр нажатия: запуск, поворот, пауза, restart, выход в меню;
+- `heldCommands` — состояние зажатых клавиш, которое приходит каждый кадр, пока клавиша физически удерживается.
 
-На Windows путь будет примерно:
+За счет этого движение в обеих играх продолжается до тех пор, пока удерживаются клавиши движения:
 
-```powershell
-.\build\clang-release\layered_games.exe
-```
+- в `Arkanoid` платформа непрерывно движется при удержании `Left/A` или `Right/D`;
+- в `Tetris` боковое движение работает через controlled repeat: первый шаг сразу, затем задержка и регулярное повторение; `SoftDrop` тоже работает удержанием.
 
 ## Управление в меню
 

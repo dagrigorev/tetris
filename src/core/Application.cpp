@@ -21,7 +21,7 @@ auto Application::run() -> int {
         previous = now;
 
         auto input = input_.poll();
-        if (input.contains(InputCommand::Quit)) {
+        if (input.isPressed(InputCommand::Quit)) {
             break;
         }
 
