@@ -8,10 +8,6 @@
 namespace games::pacman {
 namespace {
 
-[[nodiscard]] auto nearlyEqual(const double a, const double b) -> bool {
-    return std::abs(a - b) < 4.0;
-}
-
 [[nodiscard]] auto distanceSquared(const Actor& a, const Actor& b) -> double {
     const auto dx = a.x - b.x;
     const auto dy = a.y - b.y;
@@ -68,8 +64,17 @@ void PacmanGame::handleInput(const gamecore::InputFrame& input) {
 
     if (requested != Direction::None) {
         pacman_.requested = requested;
+
         if (phase_ == PacmanPhase::Ready) {
             phase_ = PacmanPhase::Playing;
+        }
+
+        // Apply an initial or buffered turn immediately when Pacman is already
+        // aligned with the grid. This makes the first movement key visibly start
+        // the game on the same frame instead of waiting for another update cycle.
+        if (centeredOnTile(pacman_.x, MazeOffsetX) && centeredOnTile(pacman_.y, MazeOffsetY) &&
+            canMoveFrom(pacman_.x, pacman_.y, pacman_.requested)) {
+            pacman_.direction = pacman_.requested;
         }
     }
 
@@ -188,7 +193,10 @@ auto PacmanGame::wantsToQuit() const -> bool {
 }
 
 void PacmanGame::resetRound() {
-    pacman_ = Actor{.x = tileCenterX(9), .y = tileCenterY(15), .direction = Direction::Left, .requested = Direction::Left, .speed = 132.0};
+    // Pacman starts idle. The first movement key both starts the round and
+    // selects the initial direction. This is less confusing than silently
+    // moving left after pressing Enter/Space.
+    pacman_ = Actor{.x = tileCenterX(9), .y = tileCenterY(15), .direction = Direction::None, .requested = Direction::None, .speed = 132.0};
     ghosts_.clear();
     ghosts_.push_back(Ghost{.actor = Actor{.x = tileCenterX(9), .y = tileCenterY(9), .direction = Direction::Left, .requested = Direction::Left, .speed = 92.0}, .color = {255, 85, 85, 255}});
     ghosts_.push_back(Ghost{.actor = Actor{.x = tileCenterX(8), .y = tileCenterY(10), .direction = Direction::Right, .requested = Direction::Right, .speed = 88.0}, .color = {255, 150, 220, 255}});
@@ -213,12 +221,12 @@ void PacmanGame::resetPellets() {
 }
 
 void PacmanGame::updatePacman(const double dt) {
-    const auto col = currentCol(pacman_.x);
-    const auto row = currentRow(pacman_.y);
-
     if (centeredOnTile(pacman_.x, MazeOffsetX) && centeredOnTile(pacman_.y, MazeOffsetY)) {
+        const auto col = currentCol(pacman_.x);
+        const auto row = currentRow(pacman_.y);
         pacman_.x = tileCenterX(col);
         pacman_.y = tileCenterY(row);
+
         if (canMoveFrom(pacman_.x, pacman_.y, pacman_.requested)) {
             pacman_.direction = pacman_.requested;
         } else if (!canMoveFrom(pacman_.x, pacman_.y, pacman_.direction)) {
@@ -226,18 +234,16 @@ void PacmanGame::updatePacman(const double dt) {
         }
     }
 
-    const auto vec = directionVector(pacman_.direction);
-    pacman_.x += static_cast<double>(vec.x) * pacman_.speed * dt;
-    pacman_.y += static_cast<double>(vec.y) * pacman_.speed * dt;
+    moveActorAlongGrid(pacman_, dt);
 }
 
 void PacmanGame::updateGhosts(const double dt) {
     for (auto& ghost : ghosts_) {
         auto& actor = ghost.actor;
-        const auto col = currentCol(actor.x);
-        const auto row = currentRow(actor.y);
 
         if (centeredOnTile(actor.x, MazeOffsetX) && centeredOnTile(actor.y, MazeOffsetY)) {
+            const auto col = currentCol(actor.x);
+            const auto row = currentRow(actor.y);
             actor.x = tileCenterX(col);
             actor.y = tileCenterY(row);
 
@@ -273,9 +279,57 @@ void PacmanGame::updateGhosts(const double dt) {
             }
         }
 
-        const auto vec = directionVector(actor.direction);
-        actor.x += static_cast<double>(vec.x) * actor.speed * dt;
-        actor.y += static_cast<double>(vec.y) * actor.speed * dt;
+        moveActorAlongGrid(actor, dt);
+    }
+}
+
+void PacmanGame::moveActorAlongGrid(Actor& actor, const double dt) {
+    if (actor.direction == Direction::None) {
+        return;
+    }
+
+    if (centeredOnTile(actor.x, MazeOffsetX) && centeredOnTile(actor.y, MazeOffsetY) &&
+        !canMoveFrom(actor.x, actor.y, actor.direction)) {
+        actor.x = tileCenterX(currentCol(actor.x));
+        actor.y = tileCenterY(currentRow(actor.y));
+        actor.direction = Direction::None;
+        return;
+    }
+
+    const auto vec = directionVector(actor.direction);
+    const auto step = actor.speed * dt;
+
+    if (vec.x != 0) {
+        const auto localX = (actor.x - static_cast<double>(MazeOffsetX + TileSize / 2)) / static_cast<double>(TileSize);
+        const auto targetCol = vec.x > 0
+            ? static_cast<int>(std::floor(localX + 0.000001)) + 1
+            : static_cast<int>(std::ceil(localX - 0.000001)) - 1;
+        const auto targetX = tileCenterX(targetCol);
+        auto nextX = actor.x + static_cast<double>(vec.x) * step;
+
+        if ((vec.x > 0 && nextX >= targetX) || (vec.x < 0 && nextX <= targetX)) {
+            nextX = targetX;
+        }
+
+        actor.x = nextX;
+        actor.y = tileCenterY(currentRow(actor.y));
+        return;
+    }
+
+    if (vec.y != 0) {
+        const auto localY = (actor.y - static_cast<double>(MazeOffsetY + TileSize / 2)) / static_cast<double>(TileSize);
+        const auto targetRow = vec.y > 0
+            ? static_cast<int>(std::floor(localY + 0.000001)) + 1
+            : static_cast<int>(std::ceil(localY - 0.000001)) - 1;
+        const auto targetY = tileCenterY(targetRow);
+        auto nextY = actor.y + static_cast<double>(vec.y) * step;
+
+        if ((vec.y > 0 && nextY >= targetY) || (vec.y < 0 && nextY <= targetY)) {
+            nextY = targetY;
+        }
+
+        actor.y = nextY;
+        actor.x = tileCenterX(currentCol(actor.x));
     }
 }
 
@@ -345,7 +399,8 @@ auto PacmanGame::currentRow(const double y) const -> int {
 
 auto PacmanGame::centeredOnTile(const double value, const int offset) const -> bool {
     const auto local = std::fmod(value - static_cast<double>(offset + TileSize / 2), static_cast<double>(TileSize));
-    return nearlyEqual(local, 0.0) || nearlyEqual(std::abs(local), static_cast<double>(TileSize));
+    constexpr auto tolerancePixels = 1.5;
+    return std::abs(local) <= tolerancePixels || std::abs(std::abs(local) - static_cast<double>(TileSize)) <= tolerancePixels;
 }
 
 auto PacmanGame::tileCenterX(const int col) const -> double {

@@ -30,12 +30,29 @@ auto Sdl2InputSource::poll() -> gamecore::InputFrame {
             continue;
         }
 
-        // Edge-triggered commands: these actions must happen once per key press.
+        // Edge-triggered commands: these actions happen once per key press.
+        // Movement is also emitted here as a press edge. This makes games start
+        // immediately on the initial key-down frame, while heldCommands below
+        // keep movement continuous for as long as the key remains pressed.
         switch (event.key.keysym.sym) {
-            case SDLK_ESCAPE: pushPressed(frame, gamecore::InputCommand::Back); break;
-            case SDLK_q: pushPressed(frame, gamecore::InputCommand::Quit); break;
+            case SDLK_ESCAPE:
+                pushPressed(frame, gamecore::InputCommand::Back);
+                break;
+            case SDLK_q:
+                pushPressed(frame, gamecore::InputCommand::Quit);
+                break;
+            case SDLK_LEFT:
+            case SDLK_a:
+                pushPressed(frame, gamecore::InputCommand::MoveLeft);
+                break;
+            case SDLK_RIGHT:
+            case SDLK_d:
+                pushPressed(frame, gamecore::InputCommand::MoveRight);
+                break;
             case SDLK_DOWN:
             case SDLK_s:
+                pushPressed(frame, gamecore::InputCommand::MoveDown);
+                pushPressed(frame, gamecore::InputCommand::SoftDrop);
                 pushPressed(frame, gamecore::InputCommand::MenuDown);
                 break;
             case SDLK_SPACE:
@@ -48,14 +65,24 @@ auto Sdl2InputSource::poll() -> gamecore::InputFrame {
                 break;
             case SDLK_UP:
             case SDLK_w:
+                pushPressed(frame, gamecore::InputCommand::MoveUp);
                 pushPressed(frame, gamecore::InputCommand::RotateClockwise);
                 pushPressed(frame, gamecore::InputCommand::MenuUp);
                 break;
-            case SDLK_x: pushPressed(frame, gamecore::InputCommand::RotateClockwise); break;
-            case SDLK_z: pushPressed(frame, gamecore::InputCommand::RotateCounterClockwise); break;
-            case SDLK_p: pushPressed(frame, gamecore::InputCommand::Pause); break;
-            case SDLK_r: pushPressed(frame, gamecore::InputCommand::Restart); break;
-            default: break;
+            case SDLK_x:
+                pushPressed(frame, gamecore::InputCommand::RotateClockwise);
+                break;
+            case SDLK_z:
+                pushPressed(frame, gamecore::InputCommand::RotateCounterClockwise);
+                break;
+            case SDLK_p:
+                pushPressed(frame, gamecore::InputCommand::Pause);
+                break;
+            case SDLK_r:
+                pushPressed(frame, gamecore::InputCommand::Restart);
+                break;
+            default:
+                break;
         }
     }
 

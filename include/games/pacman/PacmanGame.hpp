@@ -75,6 +75,7 @@ private:
     void resetPellets();
     void updatePacman(double dt);
     void updateGhosts(double dt);
+    void moveActorAlongGrid(Actor& actor, double dt);
     void collectPellet();
     void resolveGhostCollision();
     void loseLife();
