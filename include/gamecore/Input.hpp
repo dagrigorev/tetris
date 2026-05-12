@@ -13,13 +13,17 @@ enum class InputCommand {
     RotateCounterClockwise,
     Pause,
     Restart,
-    Quit
+    Quit,
+    Back,
+    Select,
+    MenuUp,
+    MenuDown
 };
 
 struct InputFrame final {
     std::vector<InputCommand> commands;
 
-    [[nodiscard]] auto contains(const InputCommand command) const -> bool;
+    [[nodiscard]] auto contains(InputCommand command) const -> bool;
 };
 
 class IInputSource {

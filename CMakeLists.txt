@@ -47,6 +47,7 @@ add_library(game_core STATIC
     src/core/Application.cpp
     src/core/EventBus.cpp
     src/core/GameRegistry.cpp
+    src/core/GameShell.cpp
 )
 
 target_include_directories(game_core PUBLIC include)
@@ -64,6 +65,14 @@ add_library(game_tetris STATIC
 target_include_directories(game_tetris PUBLIC include)
 target_link_libraries(game_tetris PUBLIC game_core layered_games_options)
 
+add_library(game_arkanoid STATIC
+    src/games/arkanoid/ArkanoidGame.cpp
+    src/games/arkanoid/ArkanoidGameFactory.cpp
+)
+
+target_include_directories(game_arkanoid PUBLIC include)
+target_link_libraries(game_arkanoid PUBLIC game_core layered_games_options)
+
 add_library(platform_sdl2 STATIC
     src/platform/sdl2/BitmapFont.cpp
     src/platform/sdl2/Sdl2InputSource.cpp
@@ -75,15 +84,15 @@ target_include_directories(platform_sdl2 PUBLIC include)
 target_link_libraries(platform_sdl2 PUBLIC game_core layered_games_options SDL2::SDL2)
 target_compile_definitions(platform_sdl2 PUBLIC SDL_MAIN_HANDLED)
 
-add_executable(layered_tetris src/main.cpp)
-target_link_libraries(layered_tetris PRIVATE game_core game_tetris platform_sdl2 layered_games_options)
-target_compile_definitions(layered_tetris PRIVATE SDL_MAIN_HANDLED)
+add_executable(layered_games src/main.cpp)
+target_link_libraries(layered_games PRIVATE game_core game_tetris game_arkanoid platform_sdl2 layered_games_options)
+target_compile_definitions(layered_games PRIVATE SDL_MAIN_HANDLED)
 
 if(WIN32)
-    add_custom_command(TARGET layered_tetris POST_BUILD
+    add_custom_command(TARGET layered_games POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         $<TARGET_FILE:SDL2::SDL2>
-        $<TARGET_FILE_DIR:layered_tetris>
+        $<TARGET_FILE_DIR:layered_games>
         VERBATIM
     )
 endif()

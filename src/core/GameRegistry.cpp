@@ -26,7 +26,20 @@ auto GameRegistry::availableGameIds() const -> std::vector<std::string> {
         ids.push_back(id);
     }
 
+    std::ranges::sort(ids);
     return ids;
+}
+
+auto GameRegistry::availableGames() const -> std::vector<GameDescriptor> {
+    std::vector<GameDescriptor> games;
+    games.reserve(factories_.size());
+
+    for (const auto& [id, factory] : factories_) {
+        games.push_back(GameDescriptor{.id = id, .displayName = std::string{factory->displayName()}});
+    }
+
+    std::ranges::sort(games, {}, &GameDescriptor::displayName);
+    return games;
 }
 
 auto InputFrame::contains(const InputCommand command) const -> bool {
